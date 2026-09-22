@@ -1,0 +1,41 @@
+{
+  "mean_test": {
+    "test": "Welch two-sample t-test",
+    "null_hypothesis": "drone and sky Hoyer means are equal",
+    "drone_count": 3052,
+    "sky_count": 2778,
+    "drone_mean": 0.22557157749218743,
+    "sky_mean": 0.018412299078334856,
+    "mean_difference": 0.20715927841385257,
+    "t_statistic": 44.75608960900769,
+    "p_value": 0.0,
+    "degrees_of_freedom": 3391.901911409538,
+    "mean_difference_95ci": [
+      0.19808409635901197,
+      0.21623446046869316
+    ],
+    "cohens_d": 1.124838119590885
+  },
+  "median_test": {
+    "test": "Mood median test",
+    "null_hypothesis": "drone and sky Hoyer medians are equal",
+    "drone_count": 3052,
+    "sky_count": 2778,
+    "drone_median": 0.11393570154905319,
+    "sky_median": 0.0,
+    "median_difference": 0.11393570154905319,
+    "grand_median": 0.0,
+    "chi2_statistic": 1200.5500606197945,
+    "p_value": 4.631862307669637e-263,
+    "contingency_table": [
+      [
+        1880,
+        472
+      ],
+      [
+        1172,
+        2306
+      ]
+    ]
+  }
+}

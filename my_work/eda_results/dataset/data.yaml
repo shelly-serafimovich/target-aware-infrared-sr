@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 6
+names: ['0', 'DJI-Phantom', 'DRONE', 'drone-thermal', 'fpv-drone', 'ufo-thermal']
+
+roboflow:
+  workspace: -hmdle
+  project: thermal-drone-47qfh-ocip3
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/-hmdle/thermal-drone-47qfh-ocip3/dataset/1

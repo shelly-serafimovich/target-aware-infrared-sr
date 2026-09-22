@@ -1,0 +1,25 @@
+{
+  "drone": {
+    "count": 3052,
+    "mean": 0.22557157278060913,
+    "std": 0.24876928329467773,
+    "median": 0.11393570154905319,
+    "min": 0.0,
+    "max": 0.827543318271637
+  },
+  "sky": {
+    "count": 2778,
+    "mean": 0.01841229945421219,
+    "std": 0.0562727265059948,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 0.5539670586585999
+  },
+  "meta": {
+    "core_size": 961,
+    "sqrt_n": 31.0,
+    "ring_centering": "core_minus_ring_mean",
+    "drone_zero_l2_count": 0,
+    "sky_zero_l2_count": 203
+  }
+}
