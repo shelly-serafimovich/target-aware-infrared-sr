@@ -1,0 +1,13 @@
+{
+  "purpose": "Fixed downstream detector for SR evaluation",
+  "model": "thermal_drone_yolo11n_corrected_v1",
+  "base_checkpoint": "yolo11n.pt",
+  "seed": 12345,
+  "imgsz": 640,
+  "epochs_requested": 100,
+  "train_split": "train",
+  "selection_split": "valid",
+  "closed_final_split": "test",
+  "weights": "/content/drive/MyDrive/thermal-drone-dataset/detector/weights/thermal_drone_yolo11n_corrected_v1_best.pt",
+  "dataset_yaml": "/content/thermal_drone_yolo_dataset/dataset.yaml"
+}
