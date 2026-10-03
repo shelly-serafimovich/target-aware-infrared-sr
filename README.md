@@ -17,9 +17,10 @@ The project is currently focused on:
 1. Dataset exploration and validation
 2. Bounding-box annotation refinement
 3. Background characterization
-4. Preparation of the corrected dataset for DifIISR baseline experiments
+4. Frozen Original DifIISR validation baseline on the corrected degradation-v2 set
+5. Fine-tuning and freezing a thermal-drone detector for downstream SR evaluation
 
-The target-aware diffusion guidance method will be developed and evaluated in later stages.
+The next method-development stage is target-aware zero-shot diffusion guidance, evaluated against the frozen Original DifIISR baseline and the same fixed detector.
 
 ## Dataset
 
@@ -124,16 +125,18 @@ target-aware-infrared-sr/
 ├── notebooks/
 │   ├── 00_environment_check.ipynb
 │   ├── 01_difiisr_setup.ipynb
-│   └── 01_thermal_drone_dataset_eda.ipynb
+│   ├── 01_thermal_drone_dataset_eda.ipynb
+│   ├── 02_difiisr_baseline_evaluation.ipynb
+│   └── 03_thermal_drone_detector.ipynb
 ├── .gitignore
 └── README.md
 ```
 
 ## Research Direction
 
-The next stage of the project is to establish the original DifIISR model as a baseline on the corrected dataset.
+The Original DifIISR validation baseline is now frozen on 2,115 validation images using the corrected DifIISR-style degradation-v2 set. The next stage freezes a YOLO thermal-drone detector trained on the corrected training annotations and selected on validation.
 
-The baseline will then be compared with a target-aware approach designed to preserve small thermal targets during the diffusion-based super-resolution process.
+The baseline will then be compared with a target-aware approach designed to preserve small thermal targets during the diffusion-based super-resolution process. The same frozen detector will be used across SR methods.
 
 Evaluation will focus on target preservation and downstream detection behavior, with conventional image-quality metrics used as complementary measures.
 
