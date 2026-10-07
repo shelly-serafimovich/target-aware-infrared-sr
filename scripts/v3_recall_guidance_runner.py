@@ -151,7 +151,7 @@ def guide(z0,base,centers,w):
     trace=[]
     for step in range(STEPS):
         opt.zero_grad(set_to_none=True)
-        dec=s.base_diffusion.decode_first_stage(zv,s.autoencoder).float().clamp(-1,1)
+        # decode_first_stage is decorated with no_grad in the upstream DifIISR code.\n        # Call the wrapped implementation so gradients flow from image-space guidance back to z.\n        _decode = getattr(s.base_diffusion.decode_first_stage, '__wrapped__', s.base_diffusion.decode_first_stage)\n        dec=_decode(zv,s.autoencoder).float().clamp(-1,1)
         gray=dec.mean(1,keepdim=True)
         scr_cur,nd_cur=patch_metrics(gray,centers)
         deficit=F.softplus((SCR_GOAL-scr_cur)/GOAL_TEMP)*GOAL_TEMP
