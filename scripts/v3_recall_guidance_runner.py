@@ -151,10 +151,9 @@ def guide(z0,base,centers,w):
     trace=[]
     for step in range(STEPS):
         opt.zero_grad(set_to_none=True)
-        # decode_first_stage is decorated with no_grad in the upstream DifIISR code.
-        # Call the wrapped implementation so gradients flow from image-space guidance back to z.
-        _decode = getattr(s.base_diffusion.decode_first_stage, '__wrapped__', s.base_diffusion.decode_first_stage)
-        dec=_decode(zv,s.autoencoder).float().clamp(-1,1)
+        # DifIISR test decoder defaults to no_grad=True.
+        # Guidance must explicitly request the differentiable autoencoder path.
+        dec=s.base_diffusion.decode_first_stage(zv,s.autoencoder,no_grad=False).float().clamp(-1,1)
         gray=dec.mean(1,keepdim=True)
         scr_cur,nd_cur=patch_metrics(gray,centers)
         deficit=F.softplus((SCR_GOAL-scr_cur)/GOAL_TEMP)*GOAL_TEMP
