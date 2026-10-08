@@ -1,5 +1,12 @@
-import argparse, json, time
+import argparse, json, time, os
 from pathlib import Path
+
+# This script runs as a standalone subprocess from Colab. Colab exports
+# MPLBACKEND=module://matplotlib_inline.backend_inline, but that backend is not
+# available inside the isolated DifIISR venv. Force a headless backend before
+# importing pyiqa/matplotlib-dependent packages.
+os.environ['MPLBACKEND'] = 'Agg'
+
 import numpy as np, pandas as pd, torch
 from PIL import Image
 import pyiqa
