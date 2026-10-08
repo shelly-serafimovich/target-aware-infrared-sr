@@ -1,6 +1,7 @@
 import argparse, json, os, shutil
 from pathlib import Path
 import numpy as np, pandas as pd
+from PIL import Image, ImageDraw
 from ultralytics import YOLO
 
 ap=argparse.ArgumentParser()
@@ -115,6 +116,56 @@ for method in ['Original DifIISR','V3-B selected']:
         paired.append({'method':method,'scope':scope,'paired_targets':len(zz),'saved':saved,'lost':lost,'net_saved':saved-lost,
                        'mean_conf_delta':float((zz.other_conf-zz.base_conf).mean())})
 pd.DataFrame(paired).to_csv(out/'paired_saved_lost.csv',index=False)
+
+# Save every disagreement as a project-ready visual triptych.
+# The GT box is drawn identically on Original / BASE / V3-B; panel text reports whether
+# the frozen detector matched that GT target and its matched confidence.
+visual_root=out/'visual_examples'; visual_root.mkdir(parents=True,exist_ok=True)
+index_rows=[]
+
+def panel(path,title,det,conf,box):
+    im=Image.open(path).convert('RGB')
+    x1,y1,x2,y2=[int(round(v)) for v in box]
+    dr=ImageDraw.Draw(im); dr.rectangle([x1,y1,x2,y2],outline=(255,0,0),width=2)
+    band=Image.new('RGB',(im.width,30),'white'); bd=ImageDraw.Draw(band)
+    bd.text((5,7),f'{title} | detected={"YES" if det else "NO"} | conf={conf:.3f}',fill='black')
+    outp=Image.new('RGB',(im.width,im.height+30),'white'); outp.paste(band,(0,0)); outp.paste(im,(0,30))
+    return outp
+
+def save_case(row,category):
+    cdir=visual_root/category; cdir.mkdir(parents=True,exist_ok=True)
+    box=(row.x1,row.y1,row.x2,row.y2)
+    p_orig=panel(method_dirs['Original DifIISR']/row.image,'Original DifIISR',bool(row.original_detected),float(row.original_conf),box)
+    p_base=panel(method_dirs['BASE']/row.image,'BASE',bool(row.base_detected),float(row.base_conf),box)
+    p_v3=panel(method_dirs['V3-B selected']/row.image,'V3-B selected',bool(row.v3b_detected),float(row.v3b_conf),box)
+    H=max(p_orig.height,p_base.height,p_v3.height); W=p_orig.width+p_base.width+p_v3.width
+    canvas=Image.new('RGB',(W,H),'white'); x=0
+    for p in [p_orig,p_base,p_v3]: canvas.paste(p,(x,0)); x+=p.width
+    fp=cdir/f'{Path(row.image).stem}_t{int(row.target_index)}.png'; canvas.save(fp)
+    index_rows.append({'category':category,'image':row.image,'target_index':int(row.target_index),
+                       'small':bool(row.small),'base_detected':bool(row.base_detected),'base_conf':float(row.base_conf),
+                       'original_detected':bool(row.original_detected),'original_conf':float(row.original_conf),
+                       'v3b_detected':bool(row.v3b_detected),'v3b_conf':float(row.v3b_conf),'visual_path':str(fp)})
+
+geom=targets[targets.method=='BASE'][['image','target_index','x1','y1','x2','y2','small']]
+bdet=targets[targets.method=='BASE'][['image','target_index','detected','gt_conf']].rename(columns={'detected':'base_detected','gt_conf':'base_conf'})
+odet=targets[targets.method=='Original DifIISR'][['image','target_index','detected','gt_conf']].rename(columns={'detected':'original_detected','gt_conf':'original_conf'})
+vdet=targets[targets.method=='V3-B selected'][['image','target_index','detected','gt_conf']].rename(columns={'detected':'v3b_detected','gt_conf':'v3b_conf'})
+cmp=geom.merge(bdet,on=['image','target_index']).merge(odet,on=['image','target_index']).merge(vdet,on=['image','target_index'])
+
+case_masks={
+    'V3B_saved_vs_BASE':(~cmp.base_detected)&cmp.v3b_detected,
+    'V3B_lost_vs_BASE':cmp.base_detected&(~cmp.v3b_detected),
+    'V3B_saved_vs_Original':(~cmp.original_detected)&cmp.v3b_detected,
+    'V3B_lost_vs_Original':cmp.original_detected&(~cmp.v3b_detected),
+}
+for category,mask in case_masks.items():
+    subset=cmp[mask]
+    print(f'{category}: {len(subset)} differing targets',flush=True)
+    for row in subset.itertuples(index=False): save_case(row,category)
+
+pd.DataFrame(index_rows).to_csv(visual_root/'visual_example_index.csv',index=False)
+print('Visual examples saved to:',visual_root,flush=True)
 
 # Standard Ultralytics validation: precision / recall / AP50 / mAP50-95.
 val_rows=[]
