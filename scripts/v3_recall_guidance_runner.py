@@ -1,4 +1,8 @@
 import argparse,sys,random,time,gc,json,hashlib,os
+# DifIISR sampling asserts that exactly one GPU is visible.
+# Some Colab runtimes expose more than one GPU, so pin the subprocess to GPU 0
+# before importing torch / initializing CUDA.
+os.environ.setdefault('CUDA_VISIBLE_DEVICES','0')
 from pathlib import Path
 import numpy as np,pandas as pd,torch
 import torch.nn.functional as F
