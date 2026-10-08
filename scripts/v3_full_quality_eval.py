@@ -67,17 +67,21 @@ def run_method(method,folder):
 
 # Reuse the frozen official baseline table when it is compatible; otherwise recompute Original.
 orig_df=None
-if a.original_csv and Path(a.original_csv).exists():
-    q=pd.read_csv(a.original_csv)
-    namecol=next((c for c in ['image','filename','name','file'] if c in q.columns),None)
-    need={'clipiqa','musiq','niqe','psnr','lpips','ssim'}
-    if namecol and need.issubset(q.columns):
-        q=q.copy(); q['image']=q[namecol].astype(str).map(lambda x:Path(x).name)
-        q=q[q.image.isin(common)][['image',*sorted(need)]].copy(); q['method']='Original DifIISR'
-        if len(q)==len(common):
-            orig_df=q[['image','method','clipiqa','musiq','niqe','psnr','lpips','ssim']]
-            orig_df.to_csv(out/'quality_Original_DifIISR.csv',index=False)
-            print('Reused official Original DifIISR metrics:',len(orig_df),flush=True)
+orig_csv=Path(a.original_csv) if a.original_csv else None
+if orig_csv is not None and orig_csv.is_file():
+    try:
+        q=pd.read_csv(orig_csv)
+        namecol=next((c for c in ['image','filename','name','file'] if c in q.columns),None)
+        need={'clipiqa','musiq','niqe','psnr','lpips','ssim'}
+        if namecol and need.issubset(q.columns):
+            q=q.copy(); q['image']=q[namecol].astype(str).map(lambda x:Path(x).name)
+            q=q[q.image.isin(common)][['image',*sorted(need)]].copy(); q['method']='Original DifIISR'
+            if len(q)==len(common):
+                orig_df=q[['image','method','clipiqa','musiq','niqe','psnr','lpips','ssim']]
+                orig_df.to_csv(out/'quality_Original_DifIISR.csv',index=False)
+                print('Reused official Original DifIISR metrics:',len(orig_df),flush=True)
+    except Exception as e:
+        print('Could not reuse official baseline CSV; recomputing Original:',repr(e),flush=True)
 if orig_df is None:
     orig_df=run_method('Original DifIISR',method_dirs['Original DifIISR'])
 base_df=run_method('BASE',method_dirs['BASE'])
