@@ -1,13 +1,14 @@
 import argparse,sys,random,time,gc,json,hashlib,os
 # DifIISR sampling asserts that exactly one GPU is visible.
-# Some Colab runtimes expose more than one GPU, so pin the subprocess to GPU 0
-# before importing torch / initializing CUDA.
 os.environ.setdefault('CUDA_VISIBLE_DEVICES','0')
+# Reduce CUDA allocator fragmentation on 16 GB-class Colab GPUs.
+os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF','max_split_size_mb:128')
 from pathlib import Path
 import numpy as np,pandas as pd,torch
 import torch.nn.functional as F
 from PIL import Image
 from omegaconf import OmegaConf
+from torch.utils.checkpoint import checkpoint
 
 sys.path.insert(0,'/content/DifIISR')
 import ldm.modules.diffusionmodules.model as ae_model
@@ -34,6 +35,8 @@ MAX_CAND=int(cfgj['max_candidates']); PROPOSAL_NMS=int(cfgj['proposal_nms'])
 SCR_GOAL=float(cfgj['scr_goal']); GOAL_TEMP=float(cfgj['goal_temp'])
 STEPS=int(cfgj['guidance_steps']); LR_GUIDE=float(cfgj['guidance_lr'])
 LAMBDA_FID=float(cfgj['lambda_fid']); LAMBDA_BG=float(cfgj['lambda_bg'])
+# Pilot keeps V3-A for the ablation. Full validation only needs BASE + selected V3-B.
+RUN_V3A=bool(cfgj.get('run_v3a', 'full' not in str(a.manifest).lower()))
 
 random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED); torch.cuda.manual_seed_all(SEED)
 
@@ -73,6 +76,15 @@ s=DifIISRSampler(cfg,chop_size=512,chop_stride=448,chop_bs=1,use_fp16=True,seed=
 
 for module in [s.model,s.autoencoder]:
     for p in module.parameters(): p.requires_grad_(False)
+
+# The differentiable VQ decoder is the memory-heavy part of guidance. Checkpoint
+# it so activations are recomputed during backward instead of being stored.
+_orig_decoder_forward=s.autoencoder.decoder.forward
+def _checkpointed_decoder_forward(*args, **kwargs):
+    if torch.is_grad_enabled() and any(torch.is_tensor(x) and x.requires_grad for x in args):
+        return checkpoint(lambda *xs: _orig_decoder_forward(*xs, **kwargs), *args, use_reentrant=False)
+    return _orig_decoder_forward(*args, **kwargs)
+s.autoencoder.decoder.forward=_checkpointed_decoder_forward
 
 def pad64(y):
     h,w=y.shape[-2:]; ph=(64-h%64)%64; pw=(64-w%64)%64
@@ -155,8 +167,6 @@ def guide(z0,base,centers,w):
     trace=[]
     for step in range(STEPS):
         opt.zero_grad(set_to_none=True)
-        # DifIISR test decoder defaults to no_grad=True.
-        # Guidance must explicitly request the differentiable autoencoder path.
         dec=s.base_diffusion.decode_first_stage(zv,s.autoencoder,no_grad=False).float().clamp(-1,1)
         gray=dec.mean(1,keepdim=True)
         scr_cur,nd_cur=patch_metrics(gray,centers)
@@ -171,6 +181,8 @@ def guide(z0,base,centers,w):
                       'fid':float(fid.detach()),'bg_fid':float(bg.detach()),
                       'scr_wmean':float(weighted_mean(scr_cur.detach(),w)),
                       'nd_wmean':float(weighted_mean(nd_cur.detach(),w))})
+        del dec,gray,scr_cur,nd_cur,deficit,target,diff,fid,bg,loss
+        torch.cuda.empty_cache()
     with torch.no_grad():
         dec=s.base_diffusion.decode_first_stage(zv,s.autoencoder).float().clamp(-1,1)
         scr_end,nd_end=patch_metrics(dec.mean(1,keepdim=True),centers)
@@ -180,7 +192,7 @@ def guide(z0,base,centers,w):
 
 df=pd.read_csv(a.manifest)
 log('='*88)
-log(f'V3 recall-first pilot | images={len(df)} | steps={STEPS} | lr={LR_GUIDE} | goal={SCR_GOAL}')
+log(f'V3 recall-first run | images={len(df)} | steps={STEPS} | lr={LR_GUIDE} | goal={SCR_GOAL} | V3A={RUN_V3A}')
 log(f'core/outer={CORE}/{OUTER} | topK={TOP_K} | SCR gate={SCR_GATE} | ND gate={ND_GATE}')
 log('='*88)
 start=time.time()
@@ -191,7 +203,8 @@ for idx,r in df.iterrows():
     paths={'BASE':out/'BASE'/name,
            'V3A':out/'V3A_pooledSCR'/name,
            'V3B':out/'V3B_pooledSCR_ND'/name}
-    if status_path.exists() and all(p.exists() for p in paths.values()):
+    required=[paths['BASE'],paths['V3B']] + ([paths['V3A']] if RUN_V3A else [])
+    if status_path.exists() and all(p.exists() for p in required):
         if (idx+1)%20==0 or idx==0:
             log(f'[{idx+1}/{len(df)}] SKIP complete {name}')
         continue
@@ -210,7 +223,7 @@ for idx,r in df.iterrows():
         if not centers:
             centers=[(crop_h//2,crop_w//2)]
         scr_in,nd_in=patch_metrics(y_up.mean(1,keepdim=True).float(),centers)
-        wA=frozen_weights(scr_in,nd_in,'A')
+        wA=frozen_weights(scr_in,nd_in,'A') if RUN_V3A else None
         wB=frozen_weights(scr_in,nd_in,'B')
 
         model_kwargs={'lq':y} if s.configs.model.params.cond_lq else None
@@ -227,9 +240,16 @@ for idx,r in df.iterrows():
 
     atomic_image(base,paths['BASE'],h,w)
 
-    a_img,a_trace,a_scr,a_nd,a_mse=guide(z0,base,centers,wA)
-    atomic_image(a_img,paths['V3A'],h,w)
-    del a_img; torch.cuda.empty_cache()
+    # Free diffusion-only tensors before any differentiable decoder pass.
+    del z_y,noise,z,t,o
+    gc.collect(); torch.cuda.empty_cache()
+
+    if RUN_V3A:
+        a_img,a_trace,a_scr,a_nd,a_mse=guide(z0,base,centers,wA)
+        atomic_image(a_img,paths['V3A'],h,w)
+        del a_img; gc.collect(); torch.cuda.empty_cache()
+    else:
+        a_trace=[]; a_scr=torch.zeros(0); a_nd=torch.zeros(0); a_mse=float('nan')
 
     b_img,b_trace,b_scr,b_nd,b_mse=guide(z0,base,centers,wB)
     atomic_image(b_img,paths['V3B'],h,w)
@@ -241,7 +261,7 @@ for idx,r in df.iterrows():
         'n_candidates':len(centers),'centers_yx':centers,
         'input_scr':[float(x) for x in scr_in.detach().cpu()],
         'input_neighbour_density':[float(x) for x in nd_in.detach().cpu()],
-        'weight_v3a':[float(x) for x in wA.detach().cpu()],
+        'weight_v3a':[float(x) for x in wA.detach().cpu()] if wA is not None else [],
         'weight_v3b':[float(x) for x in wB.detach().cpu()],
         'v3a_trace':a_trace,'v3b_trace':b_trace,
         'v3a_final_scr':[float(x) for x in a_scr.cpu()],
@@ -257,12 +277,15 @@ for idx,r in df.iterrows():
     done=len(list((out/'status').glob('*.json')))
     rate=done/elapsed if elapsed else 0
     eta=(len(df)-done)/rate/60 if rate else float('nan')
+    if RUN_V3A:
+        guide_msg=f'SCRend A/B={a_trace[-1]["scr_wmean"]:.2f}/{b_trace[-1]["scr_wmean"]:.2f} | MSE A/B={a_mse:.5f}/{b_mse:.5f}'
+    else:
+        guide_msg=f'SCRend B={b_trace[-1]["scr_wmean"]:.2f} | MSE B={b_mse:.5f}'
     log(f'[{idx+1}/{len(df)}] DONE {name} | cand={len(centers)} | '
         f'SCRin max={float(scr_in.max()):.2f} | ND max={float(nd_in.max()):.2f} | '
-        f'SCRend A/B={a_trace[-1]["scr_wmean"]:.2f}/{b_trace[-1]["scr_wmean"]:.2f} | '
-        f'MSE A/B={a_mse:.5f}/{b_mse:.5f} | {time.time()-t0:.1f}s | ETA {eta:.1f}m')
+        f'{guide_msg} | {time.time()-t0:.1f}s | ETA {eta:.1f}m')
 
-    del y,y_up,z_y,noise,z,t,o,z0,base,scr_in,nd_in,wA,wB,a_scr,a_nd,b_scr,b_nd
+    del y,y_up,z0,base,scr_in,nd_in,wA,wB,a_scr,a_nd,b_scr,b_nd
     gc.collect(); torch.cuda.empty_cache()
 
 rows=[]
