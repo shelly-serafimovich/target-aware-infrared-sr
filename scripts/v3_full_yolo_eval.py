@@ -166,9 +166,10 @@ pd.DataFrame(index_rows).to_csv(visual_root/'visual_example_index.csv',index=Fal
 print('Visual examples saved to:',visual_root,flush=True)
 
 # Standard Ultralytics validation: precision / recall / AP50 / mAP50-95.
-# IMPORTANT: Google Drive does not support creating symlinks. Build this temporary
-# YOLO dataset on Colab's local filesystem, while each local symlink points back to
-# the persistent image/label stored on Drive. The metrics CSV is still saved to Drive.
+# Build the temporary dataset locally. The detector is single-class (drone=0), while
+# the corrected annotation files can retain source-dataset class IDs (e.g. 2 or 4).
+# For the standard one-class detector evaluation, remap every non-empty GT line to
+# class 0 while preserving its normalized bbox coordinates.
 val_rows=[]
 local_val_root=Path('/content/v3b_yolo_dataset_cache')
 for method,folder in method_dirs.items():
@@ -179,8 +180,15 @@ for method,folder in method_dirs.items():
         src=(folder/row.image).resolve(); dst=imdir/row.image
         os.symlink(str(src),str(dst))
         lp=Path(str(row.label_path)); ldst=lbdir/(Path(row.image).stem+'.txt')
-        if lp.exists(): os.symlink(str(lp.resolve()),str(ldst))
-        else: ldst.write_text('')
+        if lp.exists() and lp.stat().st_size>0:
+            remapped=[]
+            for line in lp.read_text().splitlines():
+                q=line.strip().split()
+                if len(q)>=5:
+                    remapped.append('0 ' + ' '.join(q[1:5]))
+            ldst.write_text(('\n'.join(remapped)+'\n') if remapped else '')
+        else:
+            ldst.write_text('')
     yaml=root/'data.yaml'; yaml.write_text(f"path: {root}\ntrain: images/val\nval: images/val\nnames:\n  0: drone\n")
     print(f'Running standard YOLO val for {method} ...',flush=True)
     val=model.val(data=str(yaml),split='val',imgsz=640,device=0,verbose=False,plots=False,save_json=False)
