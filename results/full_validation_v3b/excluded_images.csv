@@ -1,0 +1,2 @@
+image,pilot_group,label_path,is_background,lr_width,lr_height,up_width,up_height
+DJI-Phantom_29-18-_jpg.rf.70b1beee5f9958d0e623dc6a9bd0ac89.png,full_target,/content/target-aware-infrared-sr/annotations/corrected_yolo/valid/labels/DJI-Phantom_29-18-_jpg.rf.70b1beee5f9958d0e623dc6a9bd0ac89.txt,False,480,270,1920,1080
