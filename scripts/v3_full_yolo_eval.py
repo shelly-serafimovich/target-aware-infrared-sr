@@ -118,8 +118,6 @@ for method in ['Original DifIISR','V3-B selected']:
 pd.DataFrame(paired).to_csv(out/'paired_saved_lost.csv',index=False)
 
 # Save every disagreement as a project-ready visual triptych.
-# The GT box is drawn identically on Original / BASE / V3-B; panel text reports whether
-# the frozen detector matched that GT target and its matched confidence.
 visual_root=out/'visual_examples'; visual_root.mkdir(parents=True,exist_ok=True)
 index_rows=[]
 
@@ -168,18 +166,23 @@ pd.DataFrame(index_rows).to_csv(visual_root/'visual_example_index.csv',index=Fal
 print('Visual examples saved to:',visual_root,flush=True)
 
 # Standard Ultralytics validation: precision / recall / AP50 / mAP50-95.
+# IMPORTANT: Google Drive does not support creating symlinks. Build this temporary
+# YOLO dataset on Colab's local filesystem, while each local symlink points back to
+# the persistent image/label stored on Drive. The metrics CSV is still saved to Drive.
 val_rows=[]
+local_val_root=Path('/content/v3b_yolo_dataset_cache')
 for method,folder in method_dirs.items():
-    root=out/'_yolo_dataset'/method.replace(' ','_').replace('-','')
+    root=local_val_root/method.replace(' ','_').replace('-','')
+    if root.exists(): shutil.rmtree(root)
     imdir=root/'images'/'val'; lbdir=root/'labels'/'val'; imdir.mkdir(parents=True,exist_ok=True); lbdir.mkdir(parents=True,exist_ok=True)
     for row in df.itertuples(index=False):
-        src=folder/row.image; dst=imdir/row.image
-        if not dst.exists(): os.symlink(src,dst)
+        src=(folder/row.image).resolve(); dst=imdir/row.image
+        os.symlink(str(src),str(dst))
         lp=Path(str(row.label_path)); ldst=lbdir/(Path(row.image).stem+'.txt')
-        if not ldst.exists():
-            if lp.exists(): os.symlink(lp,ldst)
-            else: ldst.write_text('')
+        if lp.exists(): os.symlink(str(lp.resolve()),str(ldst))
+        else: ldst.write_text('')
     yaml=root/'data.yaml'; yaml.write_text(f"path: {root}\ntrain: images/val\nval: images/val\nnames:\n  0: drone\n")
+    print(f'Running standard YOLO val for {method} ...',flush=True)
     val=model.val(data=str(yaml),split='val',imgsz=640,device=0,verbose=False,plots=False,save_json=False)
     val_rows.append({'method':method,'precision':float(val.box.mp),'recall':float(val.box.mr),'AP50':float(val.box.map50),'mAP50_95':float(val.box.map)})
 valdf=pd.DataFrame(val_rows); valdf.to_csv(out/'yolo_dataset_summary.csv',index=False)
