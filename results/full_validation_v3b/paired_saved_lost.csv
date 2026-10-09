@@ -1,0 +1,5 @@
+method,scope,paired_targets,saved,lost,net_saved,mean_conf_delta
+Original DifIISR,all,1817,37,54,-17,-0.014385647315803114
+Original DifIISR,small<=24,928,22,27,-5,0.0072092002942397435
+V3-B selected,all,1817,10,5,5,-0.004406518543633209
+V3-B selected,small<=24,928,5,1,4,0.002026886395093431
