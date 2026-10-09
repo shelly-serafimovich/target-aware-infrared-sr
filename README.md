@@ -1,30 +1,61 @@
-# Target-Aware Infrared Super-Resolution
+# Target-Aware Infrared Super-Resolution for Small Drone Preservation
 
-Target-aware infrared image super-resolution for preserving small thermal drone targets.
+This repository contains a research project on **infrared image super-resolution for scenes containing very small thermal drone targets**.
 
-## Project Goal
+The central question is not only whether a super-resolution method produces a visually better image, but whether it **preserves weak targets that matter for downstream detection**.
 
-This project investigates super-resolution for thermal imagery containing very small drone targets.
+We use [DifIISR](https://github.com/zirui0625/DifIISR) as the diffusion-based infrared super-resolution backbone and develop a **zero-shot target-aware guidance mechanism** designed to increase the local prominence of small thermal targets while limiting unnecessary changes to the background.
 
-The main motivation is that standard super-resolution methods may improve overall image quality while degrading or suppressing small targets that are important for downstream detection.
+---
 
-The project uses DifIISR as the baseline diffusion-based infrared super-resolution method and explores target-aware guidance for better preservation of small thermal targets.
+## Motivation
 
-## Current Stage
+Conventional super-resolution metrics such as PSNR or SSIM measure global reconstruction quality. In thermal drone imagery, however, the operationally important information may occupy only a few pixels.
 
-The project is currently focused on:
+A super-resolution result can therefore look globally plausible while suppressing, blurring, or altering a tiny target enough to hurt detection.
 
-1. Dataset exploration and validation
-2. Bounding-box annotation refinement
-3. Background characterization
-4. Frozen Original DifIISR validation baseline on the corrected degradation-v2 set
-5. Fine-tuning and freezing a thermal-drone detector for downstream SR evaluation
+This project evaluates super-resolution from two complementary perspectives:
 
-The next method-development stage is target-aware zero-shot diffusion guidance, evaluated against the frozen Original DifIISR baseline and the same fixed detector.
+1. **Image quality** — PSNR, SSIM, LPIPS, CLIPIQA, MUSIQ, and NIQE.
+2. **Target preservation and detection** — GT-matched target recall, small-target recall, detector precision/recall, AP, and background false alarms using a frozen YOLO detector.
 
-## Dataset
+---
 
-The dataset contains **7,032 thermal images** divided into the original train, validation, and test splits:
+## Method Overview
+
+Our final method, **V3-B**, adds target-aware latent guidance on top of a frozen DifIISR inference pipeline. No DifIISR weights are fine-tuned.
+
+The guidance pipeline is:
+
+1. Bicubic-upsample the low-resolution thermal input.
+2. Propose candidate local maxima using local contrast.
+3. Measure each candidate with a pooled **signal-to-clutter ratio (SCR)** computed from a target core and surrounding ring.
+4. Estimate **neighbour density (ND)** to prefer spatially supported target-like responses over isolated noise peaks.
+5. Convert these measurements into frozen candidate weights.
+6. Optimize the predicted clean latent for a small number of steps using a target-prominence objective, while regularizing global fidelity and background changes.
+7. Decode the guided latent using the frozen DifIISR decoder.
+
+The selected V3-B configuration uses:
+
+| Parameter | Value |
+|---|---:|
+| Core size | 24 × 24 |
+| Outer window | 48 × 48 |
+| Top-k pixels for pooled SCR | 15 |
+| SCR gate | 1.8 |
+| Neighbour-density gate | 0.40 |
+| Guidance steps | 3 |
+| Guidance learning rate | 0.02 |
+| Fidelity weight | 10.0 |
+| Background-fidelity weight | 20.0 |
+
+The final configuration was selected in a pilot ablation and then frozen before full validation.
+
+---
+
+## Dataset and Annotation Refinement
+
+The project dataset contains **7,032 thermal images** using the original train/validation/test split:
 
 | Split | Images |
 |---|---:|
@@ -33,113 +64,197 @@ The dataset contains **7,032 thermal images** divided into the original train, v
 | Test | 2,108 |
 | **Total** | **7,032** |
 
-The dataset contains thermal drone targets from several annotation classes. For the main super-resolution task, all drone classes are treated as thermal targets while the original class information is preserved.
+Early EDA revealed problematic bounding boxes in part of the dataset, particularly annotations that were much larger than the actual thermal target. A corrected YOLO annotation set was therefore created while preserving the original image split and class information.
 
-## Annotation Refinement
-
-Initial EDA revealed that some annotations, particularly FPV-drone annotations, contained bounding boxes that were substantially larger than the actual thermal target.
-
-A refinement procedure was therefore applied to suspicious annotations while preserving the original dataset split and class information.
-
-The corrected YOLO annotations are stored in:
+Corrected labels are stored under:
 
 ```text
-annotations/
-└── corrected_yolo/
-    ├── train/
-    │   └── labels/
-    ├── valid/
-    │   └── labels/
-    └── test/
-        └── labels/
+annotations/corrected_yolo/
+├── train/labels/
+├── valid/labels/
+└── test/labels/
 ```
 
-The annotation files follow standard YOLO format:
+All drone classes are treated as the same downstream detection target during the frozen-detector evaluation.
 
-```text
-class_id x_center y_center width height
-```
-
-Images without targets are represented by empty label files.
-
-## Background Analysis
-
-The dataset contains **927 background-only images**.
-
-To better characterize the different thermal backgrounds, background-only images were embedded using **OpenCLIP ViT-B/32** and explored using **K-Means clustering**.
-
-Ten clusters were retained for exploratory background characterization. The clusters should not be interpreted as ground-truth semantic classes; they provide a practical grouping of visually similar background conditions.
-
-Following manual inspection, the clusters were characterized as:
-
-| Cluster | Manual interpretation |
-|---:|---|
-| 0 | Half sky / half ground |
-| 1 | Pole, no sky |
-| 2 | Sky with moon |
-| 3 | Half sky / half ground |
-| 4 | Sky with light pole |
-| 5 | Cloudy sky with moon |
-| 6 | Car / ground background |
-| 7 | Half sky / half ground |
-| 8 | Mostly sky with some ground |
-| 9 | Wall with object |
-
-The complete mapping between background images, dataset splits, cluster IDs, and manual background descriptions is stored in:
+The project also contains exploratory background analysis based on OpenCLIP embeddings and K-Means clustering. Background metadata is stored in:
 
 ```text
 metadata/background_metadata.csv
 ```
 
-## Representative Background Examples
-
-Five representative images from each background cluster are included for visual interpretation:
+Representative examples are available under:
 
 ```text
-examples/
-└── background_clusters/
-    ├── cluster_00_half_sky_half_ground/
-    ├── cluster_01_pole_no_sky/
-    ├── cluster_02_sky_with_moon/
-    ├── cluster_03_half_sky_half_ground/
-    ├── cluster_04_sky_with_light_pole/
-    ├── cluster_05_cloudy_sky_with_moon/
-    ├── cluster_06_car_ground_background/
-    ├── cluster_07_half_sky_half_ground/
-    ├── cluster_08_mostly_sky_with_some_ground/
-    └── cluster_09_wall_with_object/
+examples/background_clusters/
 ```
 
-These examples are intended to document the visual interpretation of the clusters rather than serve as additional training data.
+---
+
+## Experimental Pipeline
+
+The main experimental stages are implemented as reproducible notebooks:
+
+| Notebook | Purpose |
+|---|---|
+| `00_environment_check.ipynb` | Environment and dependency checks |
+| `01_difiisr_setup.ipynb` | DifIISR setup |
+| `01_thermal_drone_dataset_eda.ipynb` | Dataset EDA and annotation analysis |
+| `02_difiisr_baseline_evaluation.ipynb` | Original DifIISR baseline evaluation |
+| `03_thermal_drone_detector.ipynb` | Frozen thermal-drone YOLO detector |
+| `04_target_size_analysis.ipynb` | Target-size analysis |
+| `05_difiisr_target_dynamics.ipynb` | Study of small-target behaviour through DifIISR |
+| `06_target_aware_difiisr.ipynb` | Initial target-aware guidance experiments |
+| `06_target_aware_difiisr_v2.ipynb` | Refined target-aware formulation |
+| `07_difiisr_bicubic_input_dataset.ipynb` | Controlled bicubic-input dataset preparation |
+| `08_recall_guidance_ablation_v3.ipynb` | V3 guidance ablation and final configuration selection |
+| `09_full_validation_standalone.ipynb` | Frozen full-validation experiment and final comparison |
+
+The final notebook is intentionally standalone and reproduces the frozen evaluation once the dataset, DifIISR weights, and detector weights are available.
+
+---
+
+## Full Validation
+
+The frozen final experiment uses a common validation set of **2,114 images**, containing:
+
+- **1,817 annotated targets**
+- **928 small targets**
+- **297 background-only images**
+
+A small target is defined as a target whose **upsampled pre-encoder bounding-box width and height are both ≤ 24 pixels**.
+
+The primary selection/evaluation criterion for the target-aware method is **GT-matched recall at IoU ≥ 0.25**, with special attention to the small-target subset.
+
+Three outputs are compared:
+
+- **Original DifIISR** — previously generated frozen DifIISR validation output.
+- **BASE** — unguided DifIISR output generated inside the final controlled runner.
+- **V3-B selected** — the same controlled pipeline with pooled-SCR + neighbour-density target-aware latent guidance.
+
+---
+
+## Final Results
+
+### Detection-oriented results
+
+| Method | Target Recall @ IoU≥0.25 | Small-Target Recall | Precision | Detector Recall | AP50 | mAP50-95 | Background FAs |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Original DifIISR | 50.14% | 17.89% | 68.62% | 35.44% | 36.83% | 18.70% | 52 |
+| BASE | 51.07% | 18.43% | **77.82%** | 35.50% | **38.94%** | **19.19%** | 59 |
+| **V3-B selected** | **51.35%** | **18.86%** | 74.04% | **36.11%** | 38.63% | 18.60% | 64 |
+
+Compared with BASE, V3-B improves:
+
+- overall GT-matched target recall by **+0.28 percentage points**;
+- small-target recall by **+0.43 percentage points**.
+
+The paired target analysis is more informative than the aggregate change alone:
+
+- **10 targets were saved and 5 were lost** versus BASE;
+- among small targets, **5 were saved and only 1 was lost**.
+
+The gain is accompanied by a trade-off: V3-B produces more background false alarms and slightly lower precision and mAP than BASE.
+
+### Image-quality results
+
+| Method | PSNR ↑ | SSIM ↑ | LPIPS ↓ | CLIPIQA ↑ | MUSIQ ↑ | NIQE ↓ |
+|---|---:|---:|---:|---:|---:|---:|
+| Original DifIISR | **28.18** | **0.7283** | 0.3729 | **0.5771** | **44.43** | 9.0833 |
+| BASE | 28.03 | 0.7111 | **0.3503** | 0.5448 | 41.69 | **9.0657** |
+| V3-B selected | 27.55 | 0.7030 | 0.3696 | 0.5481 | 41.02 | 9.0833 |
+
+V3-B is therefore **not a universal image-quality improvement**. Its value is task-oriented: it shifts the SR output toward preserving a subset of weak and small targets that the unguided baseline misses, at the cost of additional false alarms and some degradation in conventional quality metrics.
+
+This trade-off is the main empirical result of the project.
+
+Full compact results are stored in:
+
+```text
+results/full_validation_v3b/
+├── FINAL_COMPARISON.csv
+├── quality_summary.csv
+├── detection_summary.csv
+├── yolo_dataset_summary.csv
+├── paired_saved_lost.csv
+├── config.json
+├── excluded_images.csv
+└── README.md
+```
+
+Large generated SR images, per-image metric tables, detector caches, and JSONL detection outputs are intentionally kept outside the repository because they are reproducible and substantially larger.
+
+---
+
+## Core Scripts
+
+The reusable final-stage code is under `scripts/`:
+
+```text
+scripts/
+├── v3_recall_guidance_runner.py   # BASE and target-aware SR generation
+├── v3_recall_yolo_eval.py         # recall-oriented pilot evaluation
+├── v3_full_quality_eval.py        # full image-quality evaluation
+└── v3_full_yolo_eval.py           # frozen-YOLO full evaluation + saved/lost analysis
+```
+
+The final guidance runner freezes DifIISR and performs optimization only on the predicted latent representation.
+
+---
+
+## Reproducing the Final Experiment
+
+The recommended entry point is:
+
+```text
+notebooks/09_full_validation_standalone.ipynb
+```
+
+The notebook:
+
+1. mounts Google Drive;
+2. clones this repository;
+3. clones DifIISR and checks out the frozen commit;
+4. creates the required Python environment;
+5. builds the common validation manifest;
+6. runs BASE and V3-B inference;
+7. computes full image-quality metrics;
+8. evaluates all methods with the same frozen YOLO detector;
+9. exports the final comparison tables and saved/lost analysis.
+
+The DifIISR version used in the frozen experiment is pinned to:
+
+```text
+09ca97ea48d481656dd8090e84099c963059ac41
+```
+
+Dataset paths and frozen YOLO weights are expected to be available in Google Drive as configured near the top of Notebook 09.
+
+---
 
 ## Repository Structure
 
 ```text
 target-aware-infrared-sr/
-├── annotations/
-│   └── corrected_yolo/
-├── examples/
-│   └── background_clusters/
-├── metadata/
-│   └── background_metadata.csv
-├── notebooks/
-│   ├── 00_environment_check.ipynb
-│   ├── 01_difiisr_setup.ipynb
-│   ├── 01_thermal_drone_dataset_eda.ipynb
-│   ├── 02_difiisr_baseline_evaluation.ipynb
-│   └── 03_thermal_drone_detector.ipynb
+├── annotations/                 # corrected YOLO annotations
+├── examples/                    # representative background examples
+├── figures/                     # report / experiment figures
+├── metadata/                    # dataset and background metadata
+├── notebooks/                   # complete experimental workflow
+├── results/
+│   ├── detector/                # frozen-detector training/validation summaries
+│   └── full_validation_v3b/     # final compact experiment results
+├── scripts/                     # reusable V3 guidance and evaluation code
 ├── .gitignore
 └── README.md
 ```
 
-## Research Direction
+---
 
-The Original DifIISR validation baseline is now frozen on 2,115 validation images using the corrected DifIISR-style degradation-v2 set. The next stage freezes a YOLO thermal-drone detector trained on the corrected training annotations and selected on validation.
+## Takeaway
 
-The baseline will then be compared with a target-aware approach designed to preserve small thermal targets during the diffusion-based super-resolution process. The same frozen detector will be used across SR methods.
+For tiny thermal targets, **better super-resolution should not be defined only by global perceptual or reconstruction quality**.
 
-Evaluation will focus on target preservation and downstream detection behavior, with conventional image-quality metrics used as complementary measures.
+Our experiments show that targeted zero-shot guidance can recover additional detections—especially among very small targets—but that this benefit must be evaluated together with its cost in false alarms and image-quality degradation.
 
-## Status
-
-Work in progress.
+The repository is structured to make that trade-off explicit and reproducible rather than reporting only a single aggregate SR metric.
