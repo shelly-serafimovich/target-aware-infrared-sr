@@ -1,0 +1,6 @@
+fraction of drone kept (alpha),median SCR,detected by SCR >= 1.8,median mean_nb,detected by mean_nb >= 0.65
+1.0,2.03,0.597,0.617,0.287
+0.75,1.93,0.555,0.617,0.268
+0.5,1.87,0.525,0.6,0.221
+0.25,1.76,0.485,0.583,0.121
+0.0,1.67,0.438,0.55,0.052

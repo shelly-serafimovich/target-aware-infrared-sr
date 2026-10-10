@@ -1,0 +1,8 @@
+rule,TPR,FPR,SCR-only TPR at same FPR
+SCR >= 1.8,0.597,0.279,0.597
+SCR >= gate AND mean_nb >= P50,0.533,0.213,0.52
+SCR >= gate OR mean_nb >= P50,0.808,0.627,0.824
+SCR >= gate AND mean_nb >= P75,0.426,0.133,0.421
+SCR >= gate OR mean_nb >= P75,0.698,0.425,0.716
+SCR >= gate AND mean_nb >= P90,0.374,0.1,0.377
+SCR >= gate OR mean_nb >= P90,0.667,0.376,0.682

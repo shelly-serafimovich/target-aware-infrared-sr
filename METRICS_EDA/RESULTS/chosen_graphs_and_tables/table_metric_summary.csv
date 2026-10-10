@@ -1,0 +1,7 @@
+metric,AUROC vs all negatives,95% CI (by source image),AUROC vs non-drone,AUROC vs new non-drone,TPR @ FPR 5%,TPR @ FPR 10%,Spearman rho with SCR
+Pool SCR,0.714,"[0.692, 0.734]",0.72,0.705,0.321,0.377,1.0
+mean_nb (top-15 adjacency),0.653,"[0.633, 0.676]",0.654,0.651,0.0,0.287,0.57
+soft_count (k=1.5),0.714,"[0.693, 0.733]",0.72,0.706,0.287,0.396,0.95
+neighbour_density (k=1.5),0.717,"[0.698, 0.738]",0.722,0.71,0.315,0.389,0.99
+compactness (k=2.0),0.657,"[0.636, 0.676]",0.66,0.652,0.0,0.0,0.8
+Hoyer (core minus ring mean),0.435,"[0.416, 0.455]",0.436,0.434,0.012,0.036,-0.22

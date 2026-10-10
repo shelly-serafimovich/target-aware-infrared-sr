@@ -1,0 +1,11 @@
+metric,negatives,operating point,threshold,TPR,FPR,precision,balanced accuracy
+Pool SCR,non_drone,fixed tau = 1.8,1.8,0.597,0.27,0.631,0.663
+Pool SCR,non_drone,FPR <= 10%,2.462,0.377,0.099,0.747,0.639
+Pool SCR,non_drone,FPR <= 5%,2.792,0.321,0.05,0.834,0.636
+Pool SCR,new_non_drone,fixed tau = 1.8,1.8,0.597,0.291,0.672,0.653
+Pool SCR,new_non_drone,FPR <= 10%,2.465,0.377,0.1,0.791,0.639
+Pool SCR,new_non_drone,FPR <= 5%,2.8,0.321,0.05,0.865,0.636
+mean_nb (top-15 adjacency),non_drone,FPR <= 10%,0.65,0.287,0.084,0.726,0.602
+mean_nb (top-15 adjacency),non_drone,FPR <= 5%,inf,0.0,0.0,,0.5
+mean_nb (top-15 adjacency),new_non_drone,FPR <= 10%,0.65,0.287,0.098,0.746,0.595
+mean_nb (top-15 adjacency),new_non_drone,FPR <= 5%,inf,0.0,0.0,,0.5
