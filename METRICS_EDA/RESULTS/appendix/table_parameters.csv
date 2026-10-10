@@ -1,0 +1,12 @@
+parameter,value
+patch outer / core / ring width (px),48 / 24 / 12
+pool SCR top fraction of core pixels,0.025 (k = 15 pixels)
+sensor noise floor (P5 of positive non-drone ring std),0.013458
+SCR operating threshold tau / gate,1.8 / 1.8
+new non-drone margin from any bbox (px),8
+random background crops per image,4
+mean_nb: top-K pixels,15
+sparsity k-sigma sweep / default,"(1.0, 1.5, 2.0, 3.0) / 2.0"
+soft blob sigmoid temperature / k,0.25 / 1.5
+random seed,42
+python / numpy / scipy / opencv,3.9.5 / 2.0.2 / 1.13.1 / 5.0.0

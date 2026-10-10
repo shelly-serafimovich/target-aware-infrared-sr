@@ -1,0 +1,35 @@
+{
+  "drone": {
+    "count": 922,
+    "mean": 0.41131749749183655,
+    "std": 0.15261001884937286,
+    "median": 0.41228219866752625,
+    "min": 0.0,
+    "max": 0.9824007749557495
+  },
+  "non_drone": {
+    "count": 1188,
+    "mean": 0.4494289755821228,
+    "std": 0.1953561156988144,
+    "median": 0.45194095373153687,
+    "min": 0.0,
+    "max": 1.0
+  },
+  "new_non_drone": {
+    "count": 922,
+    "mean": 0.4445376992225647,
+    "std": 0.17513024806976318,
+    "median": 0.44990062713623047,
+    "min": 0.0,
+    "max": 0.9807199239730835
+  },
+  "meta": {
+    "core_size": 576,
+    "sqrt_n": 24.0,
+    "ring_centering": "core_minus_ring_mean_clipped_at_zero",
+    "energy_weight": "disabled",
+    "drone_zero_l2_count": 5,
+    "non_drone_zero_l2_count": 43,
+    "new_non_drone_zero_l2_count": 21
+  }
+}
