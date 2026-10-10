@@ -1,0 +1,50 @@
+{
+  "non_drone_percentiles": {
+    "p95": 2.7851293087005615,
+    "p99": 3.5411972999572754
+  },
+  "recall_at_non_drone_thresholds": {
+    "drone_recall_above_p95": 0.3210412147505423,
+    "drone_recall_above_p99": 0.22559652928416485,
+    "non_drone_fpr_at_p95": 0.050505050505050504,
+    "non_drone_fpr_at_p99": 0.010101010101010102
+  },
+  "youden_j": {
+    "best_tau": 1.615952491760254,
+    "best_j": 0.33044108748435974,
+    "best_tpr": 0.6637744307518005,
+    "best_fpr": 0.3333333432674408
+  },
+  "constrained_youden_j": {
+    "max_allowed_fpr": 0.03,
+    "tau": 3.074608325958252,
+    "j": 0.2536189556121826,
+    "tpr": 0.28308025002479553,
+    "fpr": 0.02946127951145172
+  },
+  "vs_new_non_drone": {
+    "new_non_drone_percentiles": {
+      "p95": 2.7895891666412354,
+      "p99": 3.532137155532837
+    },
+    "recall_at_new_non_drone_thresholds": {
+      "drone_recall_above_p95": 0.3210412147505423,
+      "drone_recall_above_p99": 0.22559652928416485,
+      "new_non_drone_fpr_at_p95": 0.0509761388286334,
+      "new_non_drone_fpr_at_p99": 0.010845986984815618
+    },
+    "youden_j": {
+      "best_tau": 1.8104956150054932,
+      "best_j": 0.312364399433136,
+      "best_tpr": 0.5900216698646545,
+      "best_fpr": 0.27765727043151855
+    },
+    "constrained_youden_j": {
+      "max_allowed_fpr": 0.03,
+      "tau": 3.0132973194122314,
+      "j": 0.2711496651172638,
+      "tpr": 0.29609543085098267,
+      "fpr": 0.02494576945900917
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "tau": 1.8,
+  "non_drone_false_positives": [
+    {
+      "index": 588,
+      "scr": 4.886232376098633,
+      "path": "extracted\\dataset\\valid\\images\\harvest_20260524_153440_614223_jpg.rf.1ee4f5025a44c6d8607c4bd318099388.jpg"
+    },
+    {
+      "index": 495,
+      "scr": 4.484870433807373,
+      "path": "extracted\\dataset\\valid\\images\\harvest_20260524_101248_944106_jpg.rf.4935c0b9c4d99cbbaf86625573d3a5e8.jpg"
+    },
+    {
+      "index": 1054,
+      "scr": 4.482312202453613,
+      "path": "extracted\\dataset\\valid\\images\\harvest_20260527_005243_444247_jpg.rf.65e4792b873c57eb8085ce3ba86e0534.jpg"
+    },
+    {
+      "index": 492,
+      "scr": 4.029012203216553,
+      "path": "extracted\\dataset\\valid\\images\\harvest_20260524_101248_944106_jpg.rf.4935c0b9c4d99cbbaf86625573d3a5e8.jpg"
+    },
+    {
+      "index": 878,
+      "scr": 4.023921966552734,
+      "path": "extracted\\dataset\\valid\\images\\harvest_20260526_145916_002404_jpg.rf.6b638abbb54ea3bfe9e307f2ab496db9.jpg"
+    },
+    {
+      "index": 882,
+      "scr": 4.002605438232422,
+      "path": "extracted\\dataset\\valid\\images\\harvest_20260526_145917_334676_jpg.rf.601409a18a947c0ac2d494228c24e6ec.jpg"
+    }
+  ],
+  "new_non_drone_false_positives": [
+    {
+      "index": 342,
+      "scr": 4.893275737762451,
+      "path": "extracted\\dataset\\valid\\images\\harvest_001966_jpg.rf.29d73e74fefc62ca9076b3762419415a.jpg"
+    },
+    {
+      "index": 698,
+      "scr": 4.777279853820801,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779286457348_6087_jpg.rf.81015896c1ebc477da165939d6a05362.jpg"
+    },
+    {
+      "index": 163,
+      "scr": 4.61558198928833,
+      "path": "extracted\\dataset\\valid\\images\\auto_000925_jpg.rf.178c907b65a5d1595dc9801868a7a2b6.jpg"
+    },
+    {
+      "index": 845,
+      "scr": 4.504184246063232,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779310475162_4257_jpg.rf.8dd40060655076102a29cf63a573bf66.jpg"
+    },
+    {
+      "index": 718,
+      "scr": 4.183999061584473,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779286490451_6687_jpg.rf.70e1d0284d9ab3940bd482364221da68.jpg"
+    },
+    {
+      "index": 742,
+      "scr": 4.107231616973877,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779286503107_7605_jpg.rf.d41c75b8bd20c093d36f89f14e93d30c.jpg"
+    }
+  ],
+  "drone_misses": [
+    {
+      "index": 320,
+      "scr": -0.06460454314947128,
+      "path": "extracted\\dataset\\valid\\images\\harvest_001279_jpg.rf.4d982a89dcb5537463fedb13d21a2078.jpg"
+    },
+    {
+      "index": 140,
+      "scr": -0.05371042713522911,
+      "path": "extracted\\dataset\\valid\\images\\auto_000815_jpg.rf.5061105cac79473388c1ddb2abe19004.jpg"
+    },
+    {
+      "index": 912,
+      "scr": -0.01814982108771801,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779310620573_6567_jpg.rf.8087e1b925bbacccf1cdabcf9755cc69.jpg"
+    },
+    {
+      "index": 904,
+      "scr": -0.002267620526254177,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779310619733_6348_jpg.rf.92b79c676f8ae73e66a42ecfcb82f310.jpg"
+    },
+    {
+      "index": 889,
+      "scr": -3.98605152440723e-05,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779310591667_5823_jpg.rf.316fdcc42e553e8232a03699ff6da0a9.jpg"
+    },
+    {
+      "index": 910,
+      "scr": 0.0,
+      "path": "extracted\\dataset\\valid\\images\\thermal_1779310620401_6522_jpg.rf.bb24ab5a94889341251d163aee92f95d.jpg"
+    }
+  ]
+}

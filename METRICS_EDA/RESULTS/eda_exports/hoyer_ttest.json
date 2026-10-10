@@ -1,0 +1,82 @@
+{
+  "mean_test": {
+    "test": "Welch two-sample t-test",
+    "null_hypothesis": "drone and non_drone Hoyer means are equal",
+    "drone_count": 922,
+    "non_drone_count": 1188,
+    "drone_mean": 0.41131750828386515,
+    "non_drone_mean": 0.44942896259064324,
+    "mean_difference": -0.03811145430677809,
+    "t_statistic": -5.028649624386117,
+    "p_value": 5.356801208612082e-07,
+    "degrees_of_freedom": 2107.9043158037703,
+    "mean_difference_95ci": [
+      -0.052974290041775396,
+      -0.02324861857178079
+    ],
+    "cohens_d": -0.21407373816098638
+  },
+  "median_test": {
+    "test": "Mood median test",
+    "null_hypothesis": "drone and non_drone Hoyer medians are equal",
+    "drone_count": 922,
+    "non_drone_count": 1188,
+    "drone_median": 0.41228219866752625,
+    "non_drone_median": 0.45194095373153687,
+    "median_difference": -0.03965875506401062,
+    "grand_median": 0.4344365894794464,
+    "chi2_statistic": 14.580539670019062,
+    "p_value": 0.00013429427277276762,
+    "contingency_table": [
+      [
+        417,
+        638
+      ],
+      [
+        505,
+        550
+      ]
+    ]
+  },
+  "vs_new_non_drone": {
+    "mean_test": {
+      "test": "Welch two-sample t-test",
+      "null_hypothesis": "drone and new_non_drone Hoyer means are equal",
+      "drone_count": 922,
+      "new_non_drone_count": 922,
+      "drone_mean": 0.41131750828386515,
+      "new_non_drone_mean": 0.44453768890784284,
+      "mean_difference": -0.03322018062397769,
+      "t_statistic": -4.340043990619315,
+      "p_value": 1.503283845253638e-05,
+      "degrees_of_freedom": 1808.1706339804311,
+      "mean_difference_95ci": [
+        -0.04823246400174068,
+        -0.018207897246214702
+      ],
+      "cohens_d": -0.2021360006967605
+    },
+    "median_test": {
+      "test": "Mood median test",
+      "null_hypothesis": "drone and new_non_drone Hoyer medians are equal",
+      "drone_count": 922,
+      "new_non_drone_count": 922,
+      "drone_median": 0.41228219866752625,
+      "new_non_drone_median": 0.44990064203739166,
+      "median_difference": -0.03761844336986542,
+      "grand_median": 0.434879869222641,
+      "chi2_statistic": 17.963123644251628,
+      "p_value": 2.2522617341528133e-05,
+      "contingency_table": [
+        [
+          415,
+          507
+        ],
+        [
+          507,
+          415
+        ]
+      ]
+    }
+  }
+}
